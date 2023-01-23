@@ -7,6 +7,8 @@ from src.api.v1.resources import dish, menu
 
 app = FastAPI(
     title=config.PROJECT_NAME,
+    docs_url='/api/openapi',
+    redoc_url='/api/redoc',
 )
 
 
