@@ -19,9 +19,11 @@ class MenuService(ServiceMixin):
         menu = self.db.query(Menu).filter(Menu.id == menu_id).first()
         return menu
 
-    def create_menu(self, new_menu: MenuCreate) -> Menu:
+    def create_menu(self, new_menu: MenuCreate) -> Menu | None:
         # TODO if already in database return -> none
         menu: Menu = Menu(**new_menu.dict())
+        if self.db.query(Menu).filter(Menu.title == new_menu.title).first():
+            return None
         self.db.add(menu)
         self.db.commit()
         self.db.refresh(menu)

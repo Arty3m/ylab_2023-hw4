@@ -44,6 +44,8 @@ def menu_detail(menu_id: int, menu_service: MenuService = Depends(get_menu_servi
 )
 def menu_create(menu: MenuCreate, menu_service: MenuService = Depends(get_menu_service)) -> MenuResponse:
     new_menu: Menu = menu_service.create_menu(menu)
+    if not new_menu:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='menu already exist')
     return MenuResponse(**new_menu.to_dict())
 
 
