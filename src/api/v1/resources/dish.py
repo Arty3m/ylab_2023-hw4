@@ -59,7 +59,7 @@ def dish_create(menu_id: int, submenu_id: int, dish: DishCreate,
     response_model=DishResponse,
     status_code=status.HTTP_200_OK,
 )
-def dish_update(dish_id: int, dish: DishCreate, dish_service: DishService = Depends(get_dish_service)) -> DishResponse:
+def dish_update(dish_id: int, dish: DishBase, dish_service: DishService = Depends(get_dish_service)) -> DishResponse:
     updated_dish: Dish | None = dish_service.update_dish(dish_id=dish_id, updated_data=dish)
     if not updated_dish:
         raise HTTPException(
