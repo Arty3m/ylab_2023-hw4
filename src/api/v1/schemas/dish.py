@@ -3,7 +3,7 @@ from pydantic import BaseModel
 __all__ = (
     'DishBase',
     'DishCreate',
-    'DishModel',
+    'DishResponse',
 )
 
 
@@ -17,5 +17,5 @@ class DishCreate(DishBase):
     ...
 
 
-class DishModel(DishBase):
+class DishResponse(DishBase):
     id: str

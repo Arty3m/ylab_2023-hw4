@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 
-from src.api.v1.schemas.dish import DishCreate
-from src.db import get_db
+from src.api.v1.schemas.dish import DishBase, DishCreate, DishResponse
 from src.models.models import Dish
+from src.services.dish import DishService, get_dish_service
 
 router = APIRouter()
 
@@ -12,90 +11,75 @@ router = APIRouter()
     path='/dishes',
     summary='Список блюд',
     tags=['dishes'],
+    response_model=list[DishResponse],
     status_code=status.HTTP_200_OK,
 )
-def dish_list(db: Session = Depends(get_db)):
-    dishs = db.query(Dish).all()
-    return dishs
+def dish_list(dish_service: DishService = Depends(get_dish_service)) -> list[DishResponse]:
+    dishes: list = dish_service.get_dish_list()
+    return [DishResponse(**dish.to_dict()) for dish in dishes]
 
 
 @router.get(
     path='/dishes/{dish_id}',
     summary='Список подменю',
     tags=['dishes'],
+    response_model=DishResponse,
     status_code=status.HTTP_200_OK,
 )
-def dish_detail(dish_id: int, db: Session = Depends(get_db)):
-    dish = db.query(Dish).filter(Dish.id == dish_id).first()
+def dish_detail(dish_id: int, dish_service: DishService = Depends(get_dish_service)) -> DishResponse:
+    dish: Dish = dish_service.get_dish_by_id(dish_id)
     if not dish:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail='dish not found',
         )
-    return {
-        'id': str(dish.id), 'title': dish.title, 'description': dish.description,
-        'price': str(dish.price),
-    }
+    return DishResponse(**dish.to_dict())
 
 
 @router.post(
     path='/dishes',
     summary='Добавить блюдо',
     tags=['dishes'],
+    response_model=DishResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def dish(submenu_id: int, dish_data: DishCreate, db: Session = Depends(get_db)):
-    price = dish_data.price[:-1] if len(dish_data.price) - \
-        dish_data.price.find('.') != 3 else dish_data.price
-
-    new_dish = Dish(
-        title=dish_data.title,
-        description=dish_data.description, price=price, owner=submenu_id,
-    )
-    db.add(new_dish)
-    db.commit()
-    db.refresh(new_dish)
-    return {
-        'id': str(new_dish.id), 'title': new_dish.title, 'description': new_dish.description,
-        'price': new_dish.price,
-    }
+def dish_create(menu_id: int, submenu_id: int, dish: DishCreate,
+                dish_service: DishService = Depends(get_dish_service)) -> DishResponse:
+    price = dish.price[:-1] if len(dish.price) - dish.price.find('.') != 3 else dish.price
+    dish.price = price
+    new_dish: Dish | None = dish_service.create_dish(menu_id=menu_id, submenu_id=submenu_id, new_dish=dish)
+    if not new_dish:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='failed to add dish')
+    return DishResponse(**new_dish.to_dict())
 
 
 @router.patch(
     path='/dishes/{dish_id}',
     summary='Добавить подменю',
     tags=['dishes'],
+    response_model=DishResponse,
     status_code=status.HTTP_200_OK,
 )
-def dish_update(dish_id: int, dish_data: DishCreate, db: Session = Depends(get_db)):
-    dish_to_change = db.get(Dish, dish_id)
-    if not dish_to_change:
+def dish_update(dish_id: int, dish: DishCreate, dish_service: DishService = Depends(get_dish_service)) -> DishResponse:
+    updated_dish: Dish | None = dish_service.update_dish(dish_id=dish_id, updated_data=dish)
+    if not updated_dish:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail='dish not found',
         )
-    dish_to_change.title = dish_data.title
-    dish_to_change.description = dish_data.description
-    dish_to_change.price = dish_data.price
-    db.add(dish_to_change)
-    db.commit()
-    db.refresh(dish_to_change)
-    return {
-        'id': str(dish_to_change.id), 'title': dish_to_change.title,
-        'description': dish_to_change.description, 'price': dish_to_change.price,
-    }
+    return DishResponse(**updated_dish.to_dict())
 
 
 @router.delete(
     path='/dishes/{dish_id}',
     summary='Удалить подменю',
     tags=['dishes'],
+    response_model=dict,
     status_code=status.HTTP_200_OK,
 )
-def dish_delete(dish_id: int, db: Session = Depends(get_db)):
-    to_del = db.get(Dish, dish_id)
-    if not to_del:
+def dish_delete(menu_id: int, submenu_id: int, dish_id: int,
+                dish_service: DishService = Depends(get_dish_service)) -> dict:
+    success: bool = dish_service.delete_dish(menu_id=menu_id, submenu_id=submenu_id, dish_id=dish_id)
+    if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail='dish not found',
         )
-    db.delete(to_del)
-    db.commit()
     return {'status': 'true', 'message': 'The dish has been deleted'}

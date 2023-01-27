@@ -20,7 +20,6 @@ class MenuService(ServiceMixin):
         return menu
 
     def create_menu(self, new_menu: MenuCreate) -> Menu | None:
-        # TODO if already in database return -> none
         menu: Menu = Menu(**new_menu.dict())
         if self.db.query(Menu).filter(Menu.title == new_menu.title).first():
             return None

@@ -43,9 +43,9 @@ def menu_detail(menu_id: int, menu_service: MenuService = Depends(get_menu_servi
     status_code=status.HTTP_201_CREATED,
 )
 def menu_create(menu: MenuCreate, menu_service: MenuService = Depends(get_menu_service)) -> MenuResponse:
-    new_menu: Menu = menu_service.create_menu(menu)
+    new_menu: Menu | None = menu_service.create_menu(menu)
     if not new_menu:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='menu already exist')
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='failed to add menu')
     return MenuResponse(**new_menu.to_dict())
 
 
@@ -75,7 +75,7 @@ def menu_update(menu: MenuBase, menu_id: int, menu_service: MenuService = Depend
     status_code=status.HTTP_200_OK,
 )
 def menu_delete(menu_id, menu_service: MenuService = Depends(get_menu_service)) -> dict:
-    success = menu_service.delete_menu(menu_id)
+    success: bool = menu_service.delete_menu(menu_id)
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail='menu not found',

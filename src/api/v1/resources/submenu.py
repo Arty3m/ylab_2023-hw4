@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 
-from src.api.v1.schemas.submenu import SubMenuCreate
-from src.db import get_db
-from src.models.models import Dish, SubMenu
+from src.api.v1.schemas.submenu import SubMenuBase, SubMenuCreate, SubMenuResponse
+from src.models.models import SubMenu
+from src.services.submenu import SubMenuService, get_submenu_service
 
 router = APIRouter()
 
@@ -12,103 +11,74 @@ router = APIRouter()
     path='/submenus',
     summary='Список подменю',
     tags=['submenus'],
+    response_model=list[SubMenuResponse],
     status_code=status.HTTP_200_OK,
 )
-def submenu_list(db: Session = Depends(get_db)):
-    submenus = db.query(SubMenu).all()
-    sbm_list: list = []
-    for submenu in submenus:
-        count_dishes = get_count_dishes(db, submenu.id)
-        sbm_list.append(
-            {
-                'id': submenu.id, 'title': submenu.title, 'description': submenu.description,
-                'count_dishes': count_dishes,
-            },
-        )
-    return sbm_list
+def submenu_list(submenu_service: SubMenuService = Depends(get_submenu_service)) -> list[SubMenuResponse]:
+    submenus: list = submenu_service.get_submenu_list()
+    return [SubMenuResponse(**submenu.to_dict()) for submenu in submenus]
 
 
 @router.get(
     path='/submenus/{submenu_id}',
     summary='Список подменю',
     tags=['submenus'],
+    response_model=SubMenuResponse,
     status_code=status.HTTP_200_OK,
 )
-def submenu_detail(submenu_id: int, db: Session = Depends(get_db)):
-    submenu = db.query(SubMenu).filter(SubMenu.id == submenu_id).first()
-    count_dishes = get_count_dishes(db, submenu_id)
+def submenu_detail(submenu_id: int, submenu_service: SubMenuService = Depends(get_submenu_service)) -> SubMenuResponse:
+    submenu: SubMenu = submenu_service.get_submenu_by_id(submenu_id=submenu_id)
     if not submenu:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail='submenu not found',
         )
-    return {
-        'id': str(submenu.id), 'title': submenu.title, 'description': submenu.description,
-        'dishes_count': count_dishes,
-    }
+    return SubMenuResponse(**submenu.to_dict())
 
 
 @router.post(
     path='/submenus',
     summary='Добавить подменю',
     tags=['submenus'],
+    response_model=SubMenuResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def submenu_create(menu_id: int, sub_menu: SubMenuCreate, db: Session = Depends(get_db)):
-    new_submenu = SubMenu(
-        title=sub_menu.title,
-        description=sub_menu.description, owner=menu_id,
-    )
-    db.add(new_submenu)
-    db.commit()
-    db.refresh(new_submenu)
-    return {
-        'id': str(new_submenu.id), 'title': new_submenu.title, 'description': new_submenu.description,
-        'count_dishes': 0,
-    }
+def submenu_create(menu_id: int, sub_menu: SubMenuCreate,
+                   submenu_service: SubMenuService = Depends(get_submenu_service)) -> SubMenuResponse:
+    new_submenu: SubMenu | None = submenu_service.create_submenu(menu_id=menu_id, new_submenu=sub_menu)
+    if not new_submenu:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='failed to add submenu')
+    return SubMenuResponse(**new_submenu.to_dict())
 
 
 @router.patch(
     path='/submenus/{submenu_id}',
     summary='Добавить подменю',
     tags=['submenus'],
+    response_model=SubMenuResponse,
     status_code=status.HTTP_200_OK,
 )
-def submenu_update(submenu_id: int, sub_menu: SubMenuCreate, db: Session = Depends(get_db)):
-    submenu_to_change = db.get(SubMenu, submenu_id)
-    if not submenu_to_change:
+def submenu_update(submenu_id: int, sub_menu: SubMenuBase,
+                   submenu_service: SubMenuService = Depends(get_submenu_service)) -> SubMenuResponse:
+    updated_submenu: SubMenu | None = submenu_service.update_submenu(submenu_id, sub_menu)
+    if not updated_submenu:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail='submenu not found',
         )
-    submenu_to_change.title = sub_menu.title
-    submenu_to_change.description = sub_menu.description
-    count_dishes = get_count_dishes(db, submenu_id)
-    db.add(submenu_to_change)
-    db.commit()
-    db.refresh(submenu_to_change)
-    return {
-        'id': str(submenu_to_change.id), 'title': submenu_to_change.title,
-        'description': submenu_to_change.description,
-        'dishes_count': count_dishes,
-    }
+    return SubMenuResponse(**updated_submenu.to_dict())
 
 
 @router.delete(
     path='/submenus/{submenu_id}',
     summary='Удалить подменю',
     tags=['submenus'],
+    response_model=dict,
     status_code=status.HTTP_200_OK,
 )
-def submenu_delete(submenu_id, db: Session = Depends(get_db)):
-    to_del = db.get(SubMenu, submenu_id)
-    if not to_del:
+def submenu_delete(menu_id: int, submenu_id: int,
+                   submenu_service: SubMenuService = Depends(get_submenu_service)) -> dict:
+    success: bool = submenu_service.delete_submenu(menu_id=menu_id, submenu_id=submenu_id)
+    if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail='submenu not found',
         )
-    db.delete(to_del)
-    db.commit()
     return {'status': 'true', 'message': 'The submenu has been deleted'}
-
-
-def get_count_dishes(db, submenu_id):
-    count_dishes = db.query(Dish).filter(Dish.owner == submenu_id).count()
-    return count_dishes

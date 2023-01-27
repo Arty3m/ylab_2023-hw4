@@ -3,7 +3,7 @@ from pydantic import BaseModel
 __all__ = (
     'SubMenuBase',
     'SubMenuCreate',
-    'SubMenuModel',
+    'SubMenuResponse',
 )
 
 
@@ -13,8 +13,9 @@ class SubMenuBase(BaseModel):
 
 
 class SubMenuCreate(SubMenuBase):
-    ...
+    dishes_count: int = 0
 
 
-class SubMenuModel(SubMenuBase):
+class SubMenuResponse(SubMenuBase):
     id: str
+    dishes_count: int = 0
