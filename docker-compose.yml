@@ -10,7 +10,7 @@ services:
       - app.env
     command: >
       sh -c "
-      echo 'Starting project...' &&      
+      echo 'Starting project...' &&
       uvicorn src.main:app --host 0.0.0.0 --reload
       "
     networks:
@@ -29,6 +29,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     environment:
+      - POSTGRES_HOST=postgres_db
+      - POSTGRES_PORT=5432
       - POSTGRES_DB=ylab_hw
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=root

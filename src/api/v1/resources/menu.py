@@ -1,110 +1,81 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 
-from src.db import get_db
-from sqlalchemy.orm import Session
-from src.models.menu import Menu, SubMenu, Dish
-from src.api.v1.schemas.menu import MenuBase, MenuCreate
+from src.api.v1.schemas.menu import MenuBase, MenuCreate, MenuResponse
+from src.models import Menu
+from src.services.menu import MenuService, get_menu_service
 
 router = APIRouter()
 
 
 @router.get(
-    path="/menus",
-    summary="Список меню",
-    tags=["menus"],
-    status_code=200,
+    path='/menus',
+    summary='Список меню',
+    tags=['menus'],
+    response_model=list[MenuResponse],
+    status_code=status.HTTP_200_OK,
 )
-def menu_list(db: Session = Depends(get_db)):
-    menus = db.query(Menu).all()
-    m_list: list = []
-    for menu in menus:
-        count_submenus = get_count_submenus(db, menu.id)
-        count_dishes = get_count_dishes(db, menu.id)
-        m_list.append(
-            {"id": menu.id, "title": menu.title, "description": menu.description, "count_submenus": count_submenus,
-             "count_dishes": count_dishes})
-    return m_list
+def menu_list(menu_service: MenuService = Depends(get_menu_service)) -> list[MenuResponse]:
+    m_list: list = menu_service.get_menu_list()
+    return [MenuResponse(**menu.to_dict()) for menu in m_list]
 
 
 @router.get(
-    path="/menus/{menu_id}",
-    summary="Просмотр определенного меню",
-    tags=["menus"],
-    status_code=200,
+    path='/menus/{menu_id}',
+    summary='Просмотр определенного меню',
+    tags=['menus'],
+    response_model=MenuResponse,
+    status_code=status.HTTP_200_OK,
 )
-def menu_detail(menu_id: int, db: Session = Depends(get_db)):
-    ms = db.query(Menu).filter(Menu.id == menu_id).first()
-    count_submenus = get_count_submenus(db, menu_id)
-    count_dishes = get_count_dishes(db, menu_id)
-    if not ms:
-        # status_code должен быть 404, но тесты на 200
-        raise HTTPException(status_code=404, detail="menu not found")
-    return {"id": str(ms.id), "title": ms.title, "description": ms.description, "submenus_count": count_submenus,
-            "dishes_count": count_dishes}
-
-
-@router.patch(
-    path="/menus/{menu_id}",
-    summary="Обновить меню",
-    tags=["menus"],
-    status_code=200,
-)
-def menu(m: MenuBase, menu_id: int, db: Session = Depends(get_db)):
-    to_change_menu = db.get(Menu, menu_id)
-    if not to_change_menu:
-        # должен быть статус код 404, но в тестах проверка на 200
-        raise HTTPException(status_code=404, detail="menu not found")
-    to_change_menu.title = m.title
-    to_change_menu.description = m.description
-    count_submenus = get_count_submenus(db, menu_id)
-    count_dishes = get_count_dishes(db, menu_id)
-    db.add(to_change_menu)
-    db.commit()
-    db.refresh(to_change_menu)
-
-    return {"id": str(to_change_menu.id), "title": to_change_menu.title, "description": to_change_menu.description,
-            "submenus_count": count_submenus,
-            "dishes_count": count_dishes}
+def menu_detail(menu_id: int, menu_service: MenuService = Depends(get_menu_service)) -> MenuResponse:
+    menu: Menu = menu_service.get_menu_by_id(menu_id=menu_id)
+    if not menu:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail='menu not found',
+        )
+    return MenuResponse(**menu.to_dict())
 
 
 @router.post(
-    path="/menus",
-    summary="Добавить меню",
-    tags=["menus"],
-    status_code=201,
+    path='/menus',
+    summary='Добавить меню',
+    tags=['menus'],
+    response_model=MenuResponse,
+    status_code=status.HTTP_201_CREATED,
 )
-def menu(m: MenuCreate, db: Session = Depends(get_db)):
-    new_menu: Menu = Menu(title=m.title, description=m.description)
-    db.add(new_menu)
-    db.commit()
-    db.refresh(new_menu)
-    return {"id": str(new_menu.id), "title": new_menu.title, "description": new_menu.description, "submenus_count": 0,
-            "dishes_count": 0}
+def menu_create(menu: MenuCreate, menu_service: MenuService = Depends(get_menu_service)) -> MenuResponse:
+    new_menu: Menu = menu_service.create_menu(menu)
+    return MenuResponse(**new_menu.to_dict())
 
 
+@router.patch(
+    path='/menus/{menu_id}',
+    summary='Обновить меню',
+    tags=['menus'],
+    response_model=MenuResponse,
+    status_code=status.HTTP_200_OK,
+)
+def menu_update(menu: MenuBase, menu_id: int, menu_service: MenuService = Depends(get_menu_service)) -> MenuResponse:
+    updated_menu: Menu | None = menu_service.update_menu(menu_id, menu)
+    if not updated_menu:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail='menu not found',
+        )
+
+    return MenuResponse(**updated_menu.to_dict())
+
+
+#
 @router.delete(
-    path="/menus/{menu_id}",
-    summary="Удалить меню",
-    tags=["menus"],
-    status_code=200,
+    path='/menus/{menu_id}',
+    summary='Удалить меню',
+    tags=['menus'],
+    response_model=dict,
+    status_code=status.HTTP_200_OK,
 )
-def menu_delete(menu_id, db: Session = Depends(get_db)):
-    to_del = db.get(Menu, menu_id)
-    if not to_del:
-        raise HTTPException(status_code=404, detail="menu not found")
-    db.delete(to_del)
-    db.commit()
-    return {"status": "true", "message": "The menu has been deleted"}
-
-
-def get_count_submenus(db, menu_id):
-    return db.query(SubMenu).filter(SubMenu.owner == menu_id).count()
-
-
-def get_count_dishes(db, menu_id):
-    sbmenu_id = tm.id if (tm := db.query(SubMenu).filter(SubMenu.owner == menu_id).first()) else -1
-    if sbmenu_id != -1:
-        count_dishes = db.query(Dish).filter(Dish.owner == sbmenu_id).count()
-    else:
-        count_dishes = 0
-    return count_dishes
+def menu_delete(menu_id, menu_service: MenuService = Depends(get_menu_service)) -> dict:
+    success = menu_service.delete_menu(menu_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail='menu not found',
+        )
+    return {'status': 'true', 'message': 'The menu has been deleted'}

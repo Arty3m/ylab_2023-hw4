@@ -1,11 +1,9 @@
-from datetime import datetime
-
 from pydantic import BaseModel
 
 __all__ = (
-    "SubMenuBase",
-    "SubMenuCreate",
-    "SubMenuModel"
+    'SubMenuBase',
+    'SubMenuCreate',
+    'SubMenuModel',
 )
 
 
@@ -20,4 +18,3 @@ class SubMenuCreate(SubMenuBase):
 
 class SubMenuModel(SubMenuBase):
     id: str
-

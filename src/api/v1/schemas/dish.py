@@ -1,11 +1,9 @@
-from datetime import datetime
-
 from pydantic import BaseModel
 
 __all__ = (
-    "DishBase",
-    "DishCreate",
-    "DishModel"
+    'DishBase',
+    'DishCreate',
+    'DishModel',
 )
 
 
