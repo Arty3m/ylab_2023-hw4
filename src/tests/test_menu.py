@@ -20,6 +20,7 @@ def test_get_menu_empty(test_app):
 def test_create_menu(test_app):
     test_data = {'title': 'Menu 1', 'description': 'Menu description 1'}
     response = test_app.post('api/v1/menus', content=json.dumps(test_data))
+    print('=>', response)
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json() != []
     global menu_id

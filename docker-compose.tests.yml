@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  tests:
+    container_name: tests
+    build:
+      context: .
+      dockerfile: Dockerfile
+    networks:
+      - app_network
+    environment:
+      - POSTGRES_HOST=postgres_db
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=ylab_hw
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=root
+      - REDIS_HOST=redis_db
+      - REDIS_PORT=6379
+    command: >
+      sh -c "
+      echo 'Starting tests' &&
+      pytest -vv
+      "
+    ports:
+      - "8080:8080"
+
+networks:
+  app_network:
+    external: true

@@ -1,17 +1,24 @@
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 
 from src.api.v1.resources import dish, menu, submenu
 from src.core import config
 
 app = FastAPI(
     title=config.PROJECT_NAME,
+    description='Домашнее задание #3 YLab',
     docs_url='/api/openapi',
     redoc_url='/api/redoc',
 )
 
 
-@app.get('/')
+@app.get(
+    path='/',
+    summary='Root',
+    tags=['root'],
+    response_model=dict,
+    status_code=status.HTTP_200_OK,
+)
 def read_root():
     return {'Hello': 'YLab'}
 

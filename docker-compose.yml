@@ -10,6 +10,8 @@ services:
       - app.env
     command: >
       sh -c "
+      echo 'Making migrations...' &&
+      alembic upgrade head &&
       echo 'Starting project...' &&
       uvicorn src.main:app --host 0.0.0.0 --reload
       "
@@ -18,9 +20,9 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      tests:
-        condition: service_completed_successfully
       postgres_db:
+        condition: service_healthy
+      redis_db:
         condition: service_healthy
 
   postgres_db:
@@ -46,32 +48,25 @@ services:
       timeout: 20s
       retries: 100
 
-  tests:
-    container_name: tests
-    build:
-      context: .
-      dockerfile: Dockerfile
-    environment:
-      - POSTGRES_HOST=postgres_db
-      - POSTGRES_PORT=5432
-      - POSTGRES_DB=ylab_hw
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=root
-    command: >
-      sh -c "
-      echo 'Making migrations' &&
-      alembic upgrade head &&
-      echo 'Starting tests' &&
-      pytest -vv
-      "
+  redis_db:
+    container_name: redis_db
+    image: redis:latest
+    expose:
+      - 6379
+    ports:
+      - "9000:6379"
     networks:
       - app_network
-    depends_on:
-      postgres_db:
-        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 20s
+      retries: 100
 
 networks:
   app_network:
+    name: app_network
+    driver: bridge
 
 volumes:
   postgres_data:

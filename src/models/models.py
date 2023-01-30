@@ -15,7 +15,7 @@ class Menu(Base):
     child = relationship('SubMenu', cascade='all,delete', backref='Menu')
 
     def to_dict(self):
-        return {key: getattr(self, key) for key in vars(self)}
+        return {key: getattr(self, key) for key in vars(self) if key != '_sa_instance_state'}
 
 
 class SubMenu(Base):
@@ -30,7 +30,7 @@ class SubMenu(Base):
     child = relationship('Dish', cascade='all,delete', backref='SubMenu')
 
     def to_dict(self):
-        return {key: getattr(self, key) for key in vars(self)}
+        return {key: getattr(self, key) for key in vars(self) if key != '_sa_instance_state'}
 
 
 class Dish(Base):
@@ -44,4 +44,4 @@ class Dish(Base):
     owner = Column(Integer, ForeignKey('submenu.id', ondelete='CASCADE'))
 
     def to_dict(self):
-        return {key: getattr(self, key) for key in vars(self)}
+        return {key: getattr(self, key) for key in vars(self) if key != '_sa_instance_state'}
