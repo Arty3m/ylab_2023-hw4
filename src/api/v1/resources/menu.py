@@ -43,7 +43,6 @@ def menu_detail(menu_id: int, menu_service: MenuService = Depends(get_menu_servi
     tags=['menus'],
     description='Добавление нового меню',
     responses={409: {'model': Response409}},
-
     response_model=MenuResponse,
     status_code=status.HTTP_201_CREATED,
 )

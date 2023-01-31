@@ -6,24 +6,62 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    networks:
-      - app_network
-    environment:
-      - POSTGRES_HOST=postgres_db
-      - POSTGRES_PORT=5432
-      - POSTGRES_DB=ylab_hw
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=root
-      - REDIS_HOST=redis_db
-      - REDIS_PORT=6379
+    volumes:
+      - .:/app
     command: >
       sh -c "
-      echo 'Starting tests' &&
+      echo 'Making migrations...' &&
+      sleep 10 &&
+      alembic upgrade head &&
+      echo 'Starting tests...' &&
       pytest -vv
       "
+    networks:
+      - test_network
+    environment:
+      - POSTGRES_HOST=db_test
+      - POSTGRES_DB=test_postgres
+      - POSTGRES_PORT=5433
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASS=root
+      - REDIS_HOST=test_redis
+      - REDIS_PORT=6379
+      - SQLALCHEMY_SILENCE_UBER_WARNING=1
     ports:
       - "8080:8080"
+    depends_on:
+      - db_test
+      - test_redis
+
+  db_test:
+    image: postgres:15.1-alpine
+    container_name: db_test
+    restart: always
+    networks:
+      - test_network
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=test_postgres
+    command:
+      - '-p 5433'
+    expose:
+      - 5433
+    ports:
+      - "5433:5433"
+
+  test_redis:
+    image: redis:latest
+    container_name: 'test_redis'
+    hostname: redis
+    restart: unless-stopped
+    networks:
+      - test_network
+    expose:
+      - 6379
+    ports:
+      - "6379:6379"
+    command: [ "redis-server" ]
 
 networks:
-  app_network:
-    external: true
+  test_network:
