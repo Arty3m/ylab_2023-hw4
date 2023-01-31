@@ -23,3 +23,5 @@ http://localhost:8000/api/openapi
 ИЛИ
 http://localhost:8000/api/redoc
 ```
+
+**Запустить Postman тесты**
