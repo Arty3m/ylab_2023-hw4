@@ -1,14 +1,14 @@
-import redis  # type: ignore
+import aioredis
+from aioredis import Redis
 
 from src.core import config
 
 
-def create_redis():
-    return redis.ConnectionPool(host=config.REDIS_HOST, port=config.REDIS_PORT, db=0)
-
-
-pool = create_redis()
-
-
-def get_redis():
-    return redis.Redis(connection_pool=pool)
+async def get_redis() -> Redis:
+    redis: Redis = aioredis.from_url(
+        url=f"redis://{config.REDIS_HOST}:{config.REDIS_PORT}/0",
+        max_connections=10,
+        encoding="utf8",
+        decode_responses=True,
+    )
+    return redis

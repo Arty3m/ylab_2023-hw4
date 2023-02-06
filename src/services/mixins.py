@@ -1,7 +1,7 @@
-from sqlmodel import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class ServiceMixin:
-    def __init__(self, db: Session, cache):
-        self.db: Session = db
+    def __init__(self, db: AsyncSession, cache):
+        self.db: AsyncSession = db
         self.cache = cache

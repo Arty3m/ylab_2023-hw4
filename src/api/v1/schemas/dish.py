@@ -1,9 +1,9 @@
 from pydantic import BaseModel
 
 __all__ = (
-    'DishBase',
-    'DishCreate',
-    'DishResponse',
+    "DishBase",
+    "DishCreate",
+    "DishResponse",
 )
 
 

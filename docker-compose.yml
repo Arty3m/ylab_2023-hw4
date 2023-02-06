@@ -6,6 +6,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    volumes:
+      - menu_data:/app/files
     env_file:
       - app.env
     command: >
@@ -24,6 +26,9 @@ services:
         condition: service_healthy
       redis_db:
         condition: service_healthy
+      worker:
+        condition: service_started
+
 
   postgres_db:
     container_name: postgres_db
@@ -58,14 +63,51 @@ services:
     networks:
       - app_network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 20s
       retries: 100
+
+  celery-worker:
+    container_name: celery-worker
+    build: .
+    env_file:
+      - app.env
+    command: celery -A src.tasks.celery:celery worker --loglevel=INFO -P threads
+    links:
+      - menu_app
+    networks:
+      - app_network
+    volumes:
+      - menu_data:/app/files
+    depends_on:
+      menu_app:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+  rabbitmq:
+    container_name: rabitmq
+    image: rabbitmq:3.11.8-management
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    env_file:
+      - app.env
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: [ "CMD", "rabbitmqctl", "status" ]
+      interval: 5s
+      timeout: 10s
+      retries: 200
+    networks:
+      - app_network
 
 networks:
   app_network:
     name: app_network
 
 volumes:
+  menu_data:
   postgres_data:
+  rabbitmq_data:

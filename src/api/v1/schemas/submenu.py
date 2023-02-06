@@ -1,9 +1,9 @@
 from pydantic import BaseModel
 
 __all__ = (
-    'SubMenuBase',
-    'SubMenuCreate',
-    'SubMenuResponse',
+    "SubMenuBase",
+    "SubMenuCreate",
+    "SubMenuResponse",
 )
 
 

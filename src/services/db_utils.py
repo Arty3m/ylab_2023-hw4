@@ -1,39 +1,67 @@
-from sqlmodel import Session
+from sqlalchemy import select, update
+from sqlalchemy.engine import Row
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.v1.schemas import DishBase, MenuBase, SubMenuBase
 from src.models import Dish, Menu, SubMenu
 
 __all__ = (
-    'add_to_db', 'get_all', 'get_from_db_by_id',
-    'get_from_db_by_title', 'delete_from_db', 'update_data',
+    "add_to_db",
+    "get_all",
+    "get_from_db_by_id",
+    "get_from_db_by_title",
+    "delete_from_db",
+    "update_data",
 )
 
 
-def add_to_db(db: Session, item: Menu | SubMenu | Dish):
+async def add_to_db(db: AsyncSession, item: Menu | SubMenu | Dish):
     db.add(item)
-    db.commit()
-    db.refresh(item)
+    await db.commit()
+    await db.refresh(item)
 
 
-def get_all(db: Session, entity: type[Menu | SubMenu | Dish]):
-    return db.query(entity).all()
+async def get_all(db: AsyncSession, entity: type[Menu | SubMenu | Dish]):
+    query = select(entity)
+    data: Row = await db.execute(query)
+    d = data.scalars().all()
+    return d
 
 
-def get_from_db_by_id(db: Session, entity: type[Menu | SubMenu | Dish], required_id: int):
-    return db.query(entity).filter(entity.id == required_id).first()
+async def get_from_db_by_id(
+    db: AsyncSession,
+    entity: type[Menu | SubMenu | Dish],
+    required_id: int,
+):
+    query = select(entity).where(entity.id == required_id)
+    data: Row = await db.execute(query)
+    d = data.fetchone()
+    return [] if not d else d[0]
 
 
-def get_from_db_by_title(db: Session, entity: type[Menu | SubMenu | Dish], title: str):
-    return db.query(entity).filter(entity.title == title).first()
+async def get_from_db_by_title(
+    db: AsyncSession,
+    entity: type[Menu | SubMenu | Dish],
+    title: str,
+):
+    query = select(entity).where(entity.title == title)
+    data: Row = await db.execute(query)
+    return data.fetchone()
 
 
-def update_data(db: Session, obj_to_upd: Menu | SubMenu | Dish, updated_data: DishBase | MenuBase | SubMenuBase):
+async def update_data(
+    db: AsyncSession,
+    required_id: int,
+    entity: type[Menu | SubMenu | Dish],
+    updated_data: DishBase | MenuBase | SubMenuBase,
+):
     upd_data = updated_data.dict()
-    for key in upd_data:
-        setattr(obj_to_upd, key, upd_data[key])
-    add_to_db(db, obj_to_upd)
+    query = update(entity).where(entity.id == required_id).values(**upd_data).returning(entity)
+    data: Row = await db.execute(query)
+    await db.commit()
+    return dict(data.fetchone())
 
 
-def delete_from_db(db: Session, item: Menu | SubMenu | Dish):
-    db.delete(item)
-    db.commit()
+async def delete_from_db(db: AsyncSession, item: Menu | SubMenu | Dish):
+    await db.delete(item)
+    await db.commit()
