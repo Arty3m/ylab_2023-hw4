@@ -3,8 +3,8 @@ import os
 from celery.result import AsyncResult
 from openpyxl.workbook import Workbook
 
-from src.tasks import celery
 from src.core import config
+from src.tasks import celery
 
 
 @celery.task  # type: ignore

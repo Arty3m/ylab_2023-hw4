@@ -14,7 +14,7 @@ app = FastAPI(
 
 @app.get(
     path="/",
-    summary="Root",
+    summary="root",
     tags=["root"],
     response_model=dict,
     status_code=status.HTTP_200_OK,
