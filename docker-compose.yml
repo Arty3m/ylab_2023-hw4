@@ -26,6 +26,8 @@ services:
         condition: service_healthy
       redis_db:
         condition: service_healthy
+      celery-worker:
+        condition: service_started
 
 
   postgres_db:
@@ -79,8 +81,6 @@ services:
     volumes:
       - menu_data:/app/files
     depends_on:
-      menu_app:
-        condition: service_started
       rabbitmq:
         condition: service_healthy
   rabbitmq:
