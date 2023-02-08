@@ -1,13 +1,12 @@
 import copy
+from dataclasses import dataclass
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from dataclasses import dataclass
-from src.db import get_db, get_redis, Redis
+
+from src.db import Redis, get_db, get_redis
 from src.models import Dish, Menu, SubMenu
-
 from src.services import CRUD
-
 
 
 @dataclass
@@ -58,7 +57,7 @@ class FullMenu:
             **{
                 "title": "Унаги рамен",
                 "description": "Рамен на нежном сливочном рыбном бульоне, с добавлением маринованного угря, "
-                               "грибов муэр, кунжута, и зеленым луком",
+                "грибов муэр, кунжута, и зеленым луком",
                 "price": "165.90",
             },
         )
@@ -67,7 +66,7 @@ class FullMenu:
             **{
                 "title": "Чиизу Рамен",
                 "description": "Рамен на насыщенном сырном бульоне на основе кокосового молока, с дабавлением"
-                               " куриной грудинки, яично-пшеничной лапши, ростков зелени, листьев вакамэ",
+                " куриной грудинки, яично-пшеничной лапши, ростков зелени, листьев вакамэ",
                 "price": "182.99",
             },
         )
@@ -125,7 +124,7 @@ class FullMenu:
             **{
                 "title": "Чивас Ригал",
                 "description": "Это купаж высококачественных солодовых и зерновых виски, выдержанный"
-                               " как минимум в течение 12 лет",
+                " как минимум в течение 12 лет",
                 "price": "750.25",
             },
         )
@@ -156,8 +155,9 @@ class FullMenu:
         return lst
 
 
-def get_full_menu(db: AsyncSession = Depends(get_db),
-                  cache: Redis = Depends(get_redis),
-                  ) -> FullMenu:
+def get_full_menu(
+    db: AsyncSession = Depends(get_db),
+    cache: Redis = Depends(get_redis),
+) -> FullMenu:
     crud: CRUD = CRUD(db)
-    return FullMenu(db=db, crud=crud, cache=cache)
+    return FullMenu(crud=crud, cache=cache)

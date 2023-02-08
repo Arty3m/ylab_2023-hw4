@@ -1,15 +1,15 @@
 import json
+from dataclasses import dataclass
 from functools import lru_cache
 
 from fastapi import Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
-from dataclasses import dataclass
+
 from src.api.v1.schemas.menu import MenuBase, MenuCreate, MenuResponse
-from src.db import get_db, get_redis, Redis
+from src.db import Redis, get_db, get_redis
 from src.models import Menu
 from src.services import CRUD
-
 
 __all__ = ("MenuService", "get_menu_service")
 
@@ -87,8 +87,8 @@ class MenuService:
 
 @lru_cache
 def get_menu_service(
-        db: AsyncSession = Depends(get_db),
-        cache: Redis = Depends(get_redis),
+    db: AsyncSession = Depends(get_db),
+    cache: Redis = Depends(get_redis),
 ) -> MenuService:
     crud: CRUD = CRUD(db)
     return MenuService(crud=crud, cache=cache)

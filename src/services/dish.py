@@ -1,12 +1,13 @@
 import json
+from dataclasses import dataclass
 from functools import lru_cache
 
 from fastapi import Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
-from dataclasses import dataclass
+
 from src.api.v1.schemas.dish import DishBase, DishCreate, DishResponse
-from src.db import get_db, get_redis, Redis
+from src.db import Redis, get_db, get_redis
 from src.models import Dish, Menu, SubMenu
 from src.services import CRUD
 
@@ -47,10 +48,10 @@ class DishService:
         return DishResponse(**serialized_data)
 
     async def create_dish(
-            self,
-            menu_id: int,
-            submenu_id: int,
-            new_dish: DishCreate,
+        self,
+        menu_id: int,
+        submenu_id: int,
+        new_dish: DishCreate,
     ) -> DishResponse:
         price = new_dish.price[:-1] if len(new_dish.price) - new_dish.price.find(".") != 3 else new_dish.price
         new_dish.price = price
@@ -111,8 +112,8 @@ class DishService:
 
 @lru_cache
 def get_dish_service(
-        db: AsyncSession = Depends(get_db),
-        cache=Depends(get_redis),
+    db: AsyncSession = Depends(get_db),
+    cache=Depends(get_redis),
 ) -> DishService:
     crud: CRUD = CRUD(db)
     return DishService(crud=crud, cache=cache)

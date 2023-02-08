@@ -1,12 +1,13 @@
 import json
+from dataclasses import dataclass
 from functools import lru_cache
 
 from fastapi import Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
-from dataclasses import dataclass
+
 from src.api.v1.schemas.submenu import SubMenuBase, SubMenuCreate, SubMenuResponse
-from src.db import get_db, get_redis, Redis
+from src.db import Redis, get_db, get_redis
 from src.models import Menu, SubMenu
 from src.services import CRUD
 
@@ -45,9 +46,9 @@ class SubMenuService:
         return SubMenuResponse(**serialized_data)
 
     async def create_submenu(
-            self,
-            menu_id: int,
-            new_submenu: SubMenuCreate,
+        self,
+        menu_id: int,
+        new_submenu: SubMenuCreate,
     ) -> SubMenuResponse:
         submenu: SubMenu = SubMenu(**new_submenu.dict())
         submenu.owner = menu_id
@@ -72,9 +73,9 @@ class SubMenuService:
         return SubMenuResponse(**serialized_data)
 
     async def update_submenu(
-            self,
-            submenu_id: int,
-            updated_data: SubMenuBase,
+        self,
+        submenu_id: int,
+        updated_data: SubMenuBase,
     ) -> SubMenuResponse:
         if not await self.crud.get_from_db_by_id(SubMenu, submenu_id):
             raise HTTPException(
@@ -107,8 +108,8 @@ class SubMenuService:
 
 @lru_cache
 def get_submenu_service(
-        db: AsyncSession = Depends(get_db),
-        cache=Depends(get_redis),
+    db: AsyncSession = Depends(get_db),
+    cache=Depends(get_redis),
 ) -> SubMenuService:
     crud: CRUD = CRUD(db)
     return SubMenuService(crud=crud, cache=cache)
