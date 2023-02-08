@@ -36,4 +36,3 @@ http://localhost:8000/api/openapi
 or
 http://localhost:8000/api/redoc
 ```
-
