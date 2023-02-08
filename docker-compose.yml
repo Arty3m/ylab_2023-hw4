@@ -26,8 +26,6 @@ services:
         condition: service_healthy
       redis_db:
         condition: service_healthy
-      celery-worker:
-        condition: service_started
 
 
   postgres_db:
@@ -84,7 +82,7 @@ services:
       rabbitmq:
         condition: service_healthy
   rabbitmq:
-    container_name: rabitmq
+    container_name: rabbitmq
     image: rabbitmq:3.11.8-management
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
