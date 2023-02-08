@@ -135,15 +135,13 @@ class FullMenu:
         return {"FULL_MENU": "SUCCESSFULLY CREATED"}
 
     async def make_excel_file(self):
-        print("MAKING FILE")
-        q = """SELECT menu.id, menu.title, menu.description, submenu.id as sb_id,
-            submenu.title as sb_title, submenu.description as sb_description, dish.id as dsh_id,
-            dish.title as dsh_title, dish.description as dsh_description, dish.price
-            FROM menu JOIN submenu ON submenu.owner = menu.id JOIN dish ON dish.owner = submenu.id"""
-        data = await self.db.execute(q)
-        d = data.fetchall()
+        query = """SELECT menu.id, menu.title, menu.description, submenu.id as sb_id,
+                          submenu.title as sb_title, submenu.description as sb_description, dish.id as dsh_id,
+                          dish.title as dsh_title, dish.description as dsh_description, dish.price
+                          FROM menu JOIN submenu ON submenu.owner = menu.id JOIN dish ON dish.owner = submenu.id"""
 
-        d_ser = [list(dict(el).values()) for el in d]
+        data = await self.crud.get_full_menu(query)
+        d_ser = [list(dict(el).values()) for el in data]
         lst = copy.deepcopy(d_ser)
         for i in range(len(lst)):
             for j in range(len(lst[i])):

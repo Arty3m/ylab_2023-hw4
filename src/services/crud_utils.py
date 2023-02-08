@@ -59,3 +59,7 @@ class CRUD:
     async def delete_from_db(self, item: Menu | SubMenu | Dish):
         await self.db.delete(item)
         await self.db.commit()
+
+    async def get_full_menu(self, query: str):
+        data = await self.db.execute(query)
+        return data.fetchall()

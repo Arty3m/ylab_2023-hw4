@@ -14,13 +14,9 @@ def create_task(data):
     wb = Workbook()
     ws = wb.active
     ws.title = "Меню"
-    row = 1
-    col = 1
-    for i in range(len(data)):
-        for j in range(len(data[i])):
-            ws.cell(row, col + j).value = data[i][j]
-        row += 1
-
+    for i, row in enumerate(data):
+        for j, el in enumerate(row):
+            ws.cell(i + 1, j + 1, el)
     wb.save(os.path.join(config.BASE_DIR, filename))
     return task_id
 

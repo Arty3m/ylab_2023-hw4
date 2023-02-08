@@ -21,7 +21,7 @@ router = APIRouter()
     description="Добавление задачи на создание excel файла",
 )
 async def get_excel_f(full_menu: FullMenu = Depends(get_full_menu)):
-    data = await full_menu.make_excel_file()
+    data: list = await full_menu.make_excel_file()
     task_id = create_task.delay(data)
     return get_task_info(task_id)
 
